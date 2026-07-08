@@ -138,31 +138,42 @@ def process_webhook_async(event_data):
         if event_type in ["mention_to_me", "message_created"]:
             room_id = str(event.get("room_id", ""))
             message_body = event.get("body", "")
-            from_account_id = event.get("from_account_id") or event.get("account_id")
 
+            # 質問してきた人のアカウントIDを正しく取得する
+            # Chatwork Webhookでは "from_account_id" にメッセージ送信者のIDが入る
+            from_account_id = event.get("from_account_id")
+            log(f"[THREAD] 送信者ID: {from_account_id}")
+
+            # ボット自身のメッセージは無視
             if from_account_id == BOT_ACCOUNT_ID:
                 log("[THREAD] ボット自身のメッセージのためスキップ")
                 return
 
+            # 対象ルーム以外は無視
             if room_id != ROOM_ID:
                 log(f"[THREAD] 対象外ルーム: {room_id}")
                 return
 
+            # message_createdイベントの場合はボットへのメンションがあるか確認
             if event_type == "message_created":
                 if f"[To:{BOT_ACCOUNT_ID}]" not in message_body:
                     log("[THREAD] ボットへのメンションなし、スキップ")
                     return
 
+            # メンション記法を除いた質問テキストを抽出
             question = message_body.replace(f"[To:{BOT_ACCOUNT_ID}]", "").strip()
             log(f"[THREAD] 質問: {question}")
 
+            # 最近のメッセージをコンテキストとして取得
             recent_messages = get_recent_messages(limit=30)
             log(f"[THREAD] コンテキストメッセージ取得: {len(recent_messages)}件")
 
+            # AI回答を生成
             ai_response = generate_ai_response(question, recent_messages)
 
+            # 質問してきた人（from_account_id）に返信する
             success = send_chatwork_message(room_id, ai_response, reply_to_account_id=from_account_id)
-            log(f"[THREAD] Chatwork返信: {'成功' if success else '失敗'}")
+            log(f"[THREAD] Chatwork返信: {'成功' if success else '失敗'} → 宛先ID: {from_account_id}")
 
     except Exception as e:
         log(f"[THREAD] Webhook処理エラー: {e}")
