@@ -41,11 +41,52 @@ ROOM_DESCRIPTION = """
 - ディレクターのマネジメント、案件管理、クライアント対応、品質確認などが主なトピック
 - メンバー間の連絡調整、タスク管理、進捗確認なども行われる
 
+【ルームに登録されている重要情報】
+
+■ ディレクターマニュアル
+https://docs.google.com/spreadsheets/d/1rtiW2J5W38sgx7R06bE0vBJAoApjhqwLpFrJAnahoJ0/edit#gid=0
+
+■ 連絡先情報・リソースチェックシート
+https://docs.google.com/spreadsheets/d/1C40eiQe6rAPqqcKvglNUzn6q8dDWubF84Roqp136njk/edit#gid=1259257927
+
+■ 日程調整リンク
+- おゆぷろさん：https://www.jicoo.com/t/UgLnFBsEJZt9/e/CkjMC-VL
+- 夢さん：https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2p-RGT0ial7sToKakjCHNcyZX2u10HAUTrFc5zbzHZeF_mu9BloFGD2mdJjS7kb3IKbFyRJCRi
+- 河合さん：https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0CoVa_OjJ0o4OhsBroFpvEDzm7C4610K-gfs8VGMVyB6fQ04rjBh5JzWA_5HqQGUJPhkgbTvuM
+- 森さん：https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ1OUJzKIVqIOv2Zds0lJVpjmtkUx6lLO7ri913n1ZuKgxEyTRjICuUv_xHBlrYm8IICgFvIXGDq
+- 秋山さん：https://calendar.app.google/3mZE4rfTsPomeFSK9
+- 高山さん：https://calendar.app.google/wgxxjgRjVLsLJjz7A
+- 池田（営業）：https://www.jicoo.com/t/bitegami/e/h-ikeda
+- 八重樫（営業）：https://www.jicoo.com/t/bitegami/e/yaegashi
+- 押川（営業）：https://www.jicoo.com/t/bitegami/e/oshikawa
+
+■ 営業ディレクター引き継ぎフォーム
+- 編集リンク：https://docs.google.com/forms/d/13oExMfdU1xiBsQpgPV5S74J9YET-kGG6V4XoIMyjldU/edit
+- 回答リンク：https://forms.gle/aVQXTcg54G1nuHtv6
+
+■ 実績集（Canva）
+https://www.canva.com/design/DAGJR0yZ6Tw/0qksVNx_prWI24b7HtyemQ/edit
+
+■ 構成四半期推移
+https://docs.google.com/spreadsheets/d/1U_KZRiqwXUW8SZ8MXc1blAPdaVeKzGjv8Ucv6lVuZg0/edit
+
+■ あいさつバナー（新規案件参入時にお客様に提示）
+https://www.canva.com/design/DAGqMIMdLxk/Ahoz-UgHxy-cLMPodPSkAw/edit
+
+■ 素材サイト
+- 本URL：https://japan.bitegami.com
+- ログインURL：https://japan.bitegami.com/membership-login/
+
+■ 制作人員評価フォーム（ディレクター回答用）
+- 回答：https://docs.google.com/forms/d/e/1FAIpQLSfUKoL0C0GCMZ8p2dZkcWHRWfb8Nzai4w0hXdOmB_RvATDcCg/viewform
+- 集計表：https://docs.google.com/spreadsheets/d/1nCI_KmrNgWg1LNnafIimyaNvBrr4TXiWbDes7CQ0R98/edit
+
 【回答のルール】
 - まず相手の状況・感情に共感する一言を入れる
 - 次に、具体的で実践的なアドバイスを伝える
 - 最後に「何かあればまた相談してね」など、相手が話しかけやすい一言で締める
 - Chatworkのマークアップ記法（[info][title]タイトル[/title]内容[/info] など）を適切に使用する
+- URLを案内する際は必ずリンクをそのまま貼る
 - 返信は日本語で
 """
 
@@ -63,6 +104,7 @@ def get_recent_messages(limit=30):
         if response.status_code == 200:
             messages = response.json()
             recent = messages[-limit:] if len(messages) > limit else messages
+            log(f"最近のメッセージ取得: {len(recent)}件")
             return recent
         log(f"メッセージ取得失敗: {response.status_code}")
         return []
@@ -170,8 +212,8 @@ def process_webhook_async(event_data):
             question = message_body.replace(f"[To:{BOT_ACCOUNT_ID}]", "").strip()
             log(f"[THREAD] 質問: {question}")
 
-            # 最近のメッセージをコンテキストとして取得
-            recent_messages = get_recent_messages(limit=30)
+            # 最近のメッセージをコンテキストとして取得（最大100件）
+            recent_messages = get_recent_messages(limit=100)
             log(f"[THREAD] コンテキストメッセージ取得: {len(recent_messages)}件")
 
             # AI回答を生成
